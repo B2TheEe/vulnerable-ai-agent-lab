@@ -8,11 +8,15 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
 
+import os
+
+from agent.defenses import check_input, check_tool
 from agent.llm_client import LLMClient, _to_dict
 from agent.system_prompt import SYSTEM_PROMPT
 from agent.tools import AVAILABLE_TOOLS, TOOL_SCHEMAS
 
 console = Console()
+DEFENSE = os.environ.get("DEFENSE", "none").lower()
 
 
 def run_tool_call(tool_call) -> dict:
@@ -37,6 +41,13 @@ def run_tool_call(tool_call) -> dict:
     if fn is None:
         result = f"(unknown tool: {name})"
     else:
+        # Layer 3 (allowlist) check op de echte command
+        cmd = args.get("command", "")
+        allowed, reason = check_tool(DEFENSE, cmd)
+        if not allowed:
+            result = f"[DEFENSE blocked] {reason}"
+            console.print(Panel(result, title="🛡️  Tool blocked", border_style="red"))
+            return {"role": "tool", "content": result, "name": name}
         try:
             result = fn(**args)
         except Exception as exc:  # noqa: BLE001
@@ -48,9 +59,11 @@ def run_tool_call(tool_call) -> dict:
 
 def main() -> None:
     console.print(Panel.fit(
-        "[bold red]Vulnerable AI Agent Lab[/bold red]\n"
-        "Educational use only. Run lokaal — niet exposen.\n"
-        "Type [cyan]/quit[/cyan] om te stoppen, [cyan]/reset[/cyan] voor nieuwe sessie.",
+        f"[bold red]Vulnerable AI Agent Lab[/bold red]\n"
+        f"Defense layer: [yellow]{DEFENSE}[/yellow] "
+        f"(set DEFENSE=none|regex|judge|allowlist)\n"
+        f"Educational use only. Run lokaal — niet exposen.\n"
+        f"Type [cyan]/quit[/cyan] om te stoppen, [cyan]/reset[/cyan] voor nieuwe sessie.",
         border_style="red",
     ))
 
@@ -72,6 +85,15 @@ def main() -> None:
             console.print("[dim]history reset[/dim]")
             continue
         if not cmd:
+            continue
+
+        # Layer 1 (regex) / Layer 2 (judge) check op user input
+        allowed, reason = check_input(DEFENSE, user_input)
+        if not allowed:
+            console.print(Panel(
+                f"[red]Input blocked.[/red]\n{reason}",
+                title="🛡️  Input blocked", border_style="red",
+            ))
             continue
 
         messages.append({"role": "user", "content": user_input})

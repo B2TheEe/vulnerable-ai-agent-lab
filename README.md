@@ -50,4 +50,4 @@ python -m agent.main
 
 Dit project bestaat om defenders en pentesters te leren hoe agentische LLM-systemen
 falen. Gebruik het niet tegen systemen waar je geen expliciete toestemming voor hebt.
-# vulnerable-ai-agent-lab
+
