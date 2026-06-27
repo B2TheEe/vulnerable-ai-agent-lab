@@ -6,3 +6,6 @@ __pycache__/
 hack-log-private.md
 tests/__pycache__/
 agent/__pycache__/
+
+# Honeypot fake-secrets zijn GEEN echte secrets — wel committen:
+!challenges/02-lfi-via-file-read/fake-secrets/.env
