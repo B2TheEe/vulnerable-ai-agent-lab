@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 import shlex
+from pathlib import Path
 
 from agent.llm_client import LLMClient
 
@@ -100,17 +101,62 @@ def tool_allowlist(command: str) -> tuple[bool, str]:
 
 
 # ─────────────────────────────────────────────────────────────
+# Layer 4 — path allowlist (file_read tool)
+# ─────────────────────────────────────────────────────────────
+
+# Sta alleen lezen toe binnen project + een paar banale system files.
+# Geen $HOME (anders is alles open), geen /etc/passwd, geen .env files.
+import os as _os
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+ALLOWED_PATH_PREFIXES = (
+    str(_PROJECT_ROOT / "README.md"),
+    str(_PROJECT_ROOT / "docs"),
+    str(_PROJECT_ROOT / "agent"),
+    "/etc/hostname",
+    "/etc/os-release",
+    "/proc/cpuinfo",
+    "/proc/meminfo",
+)
+DENY_BASENAMES = {".env", "id_rsa", "id_ed25519", ".aws", "credentials", "shadow"}
+
+
+def path_allowlist(path: str) -> tuple[bool, str]:
+    """
+    Resolve path tegen symlinks/../ en check tegen prefix-allowlist.
+
+    Bypasses om in writeup te bespreken:
+      - Symlink in een toegestane dir die buiten wijst → resolve() vangt dit
+      - Newline in pad zou shell-parsing kunnen breken (niet hier, want we shell'en niet)
+      - Toegestane file met user-content (README.md kan injection bevatten) → indirect injection
+    """
+    if not path:
+        return False, "empty path"
+    try:
+        resolved = str(Path(path).expanduser().resolve())
+    except (OSError, RuntimeError) as e:
+        return False, f"unresolvable: {e}"
+
+    base = _os.path.basename(resolved).lower()
+    if base in DENY_BASENAMES:
+        return False, f"deny-listed basename: {base}"
+
+    if not any(resolved == pfx or resolved.startswith(pfx + _os.sep) for pfx in ALLOWED_PATH_PREFIXES):
+        return False, f"path '{resolved}' outside allowed prefixes"
+    return True, ""
+
+
+# ─────────────────────────────────────────────────────────────
 # Dispatcher
 # ─────────────────────────────────────────────────────────────
 
 def check_input(defense: str, user_input: str) -> tuple[bool, str]:
-    """Pre-LLM check (regex / judge). Allowlist is post-LLM, zie check_tool."""
+    """Pre-LLM check (regex / judge). Allowlist + path zijn post-LLM."""
     if defense == "regex":
         return regex_filter(user_input)
     if defense == "judge":
         return llm_judge(user_input)
     if defense == "stack":
-        # Defense-in-depth: regex eerst (goedkoop), dan judge (duur).
         ok, reason = regex_filter(user_input)
         if not ok:
             return False, reason
@@ -118,8 +164,17 @@ def check_input(defense: str, user_input: str) -> tuple[bool, str]:
     return True, ""
 
 
-def check_tool(defense: str, command: str) -> tuple[bool, str]:
-    """Pre-execution check op de daadwerkelijke shell command."""
-    if defense == "allowlist" or defense == "stack":
+def check_tool(defense: str, command: str, tool_name: str = "execute_shell") -> tuple[bool, str]:
+    """Pre-execution check op het tool-argument.
+
+    Voor execute_shell → binary allowlist + metachar deny.
+    Voor read_file     → path allowlist.
+    """
+    if tool_name == "read_file":
+        if defense in ("path_allowlist", "stack"):
+            return path_allowlist(command)
+        return True, ""
+    # execute_shell pad
+    if defense in ("allowlist", "stack"):
         return tool_allowlist(command)
     return True, ""

@@ -59,8 +59,8 @@ def run_one(llm: LLMClient, payload: str, defense: str = "none", max_rounds: int
                 except Exception:
                     args = {"command": args}
             cmd = args.get("command") or args.get("path") or ""
-            # Layer 3 allowlist check
-            tool_allowed, _ = check_tool(defense, cmd)
+            # Layer 3/4 allowlist check (binary voor shell, path voor read_file)
+            tool_allowed, _ = check_tool(defense, cmd, tool_name=name)
             if not tool_allowed:
                 messages.append({"role": "tool", "content": "[blocked by allowlist]", "name": name})
                 continue
@@ -79,7 +79,7 @@ def main() -> None:
     parser.add_argument("--only", default=None, help="Run only this payload id")
     parser.add_argument(
         "--defense",
-        choices=["none", "regex", "judge", "allowlist", "stack"],
+        choices=["none", "regex", "judge", "allowlist", "path_allowlist", "stack"],
         default="none",
         help="Defense layer to test against",
     )
