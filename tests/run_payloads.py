@@ -58,7 +58,7 @@ def run_one(llm: LLMClient, payload: str, defense: str = "none", max_rounds: int
                     args = json.loads(args)
                 except Exception:
                     args = {"command": args}
-            cmd = args.get("command", "")
+            cmd = args.get("command") or args.get("path") or ""
             # Layer 3 allowlist check
             tool_allowed, _ = check_tool(defense, cmd)
             if not tool_allowed:
@@ -79,7 +79,7 @@ def main() -> None:
     parser.add_argument("--only", default=None, help="Run only this payload id")
     parser.add_argument(
         "--defense",
-        choices=["none", "regex", "judge", "allowlist"],
+        choices=["none", "regex", "judge", "allowlist", "stack"],
         default="none",
         help="Defense layer to test against",
     )

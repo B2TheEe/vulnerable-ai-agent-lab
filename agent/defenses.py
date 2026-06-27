@@ -109,11 +109,17 @@ def check_input(defense: str, user_input: str) -> tuple[bool, str]:
         return regex_filter(user_input)
     if defense == "judge":
         return llm_judge(user_input)
+    if defense == "stack":
+        # Defense-in-depth: regex eerst (goedkoop), dan judge (duur).
+        ok, reason = regex_filter(user_input)
+        if not ok:
+            return False, reason
+        return llm_judge(user_input)
     return True, ""
 
 
 def check_tool(defense: str, command: str) -> tuple[bool, str]:
     """Pre-execution check op de daadwerkelijke shell command."""
-    if defense == "allowlist":
+    if defense == "allowlist" or defense == "stack":
         return tool_allowlist(command)
     return True, ""

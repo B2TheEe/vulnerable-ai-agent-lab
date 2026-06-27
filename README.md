@@ -27,7 +27,7 @@ python -m agent.main
 | # | Naam | OWASP LLM | Difficulty |
 |---|------|-----------|------------|
 | 01 | RCE via Direct Prompt Injection | LLM01 | ⭐ |
-| 02 | LFI via File-Read Tool *(week 2)* | LLM06 | ⭐⭐ |
+| 02 | LFI via File-Read Tool | LLM06 | ⭐⭐ |
 | 03 | SSRF via HTTP Tool *(week 3)* | LLM01+LLM02 | ⭐⭐ |
 | 04 | Indirect Injection via Web Browse *(week 4)* | LLM01 | ⭐⭐⭐ |
 | 05 | Data Exfil via Markdown Rendering *(week 4)* | LLM02 | ⭐⭐ |
