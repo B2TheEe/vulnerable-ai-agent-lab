@@ -12,13 +12,17 @@ Endpoints:
     http://127.0.0.1:9998/                         → simple "OK"
     http://127.0.0.1:9999/                         → simple "OK"
 
-Ctrl-C om te stoppen.
+Ctrl-C om graceful te stoppen (beide servers worden netjes geshutdown).
 """
 from __future__ import annotations
 
+import errno
+import sys
 import threading
+import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+BIND_HOST = "127.0.0.1"   # NEVER change to 0.0.0.0 — lab must stay localhost-only
 IMDS_PORT = 9998
 ADMIN_PORT = 9999
 
@@ -40,7 +44,10 @@ ADMIN_FLAG = (
 def _make_handler(routes: dict[str, str]) -> type[BaseHTTPRequestHandler]:
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802 — stdlib signature
-            body = routes.get(self.path, routes.get("/", "OK\n"))
+            # Strip query-string + fragment before route lookup, otherwise
+            # /admin?x=1 falls through to the "/" fallback instead of /admin.
+            path = self.path.split("?", 1)[0].split("#", 1)[0]
+            body = routes.get(path, routes.get("/", "OK\n"))
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.send_header("Content-Length", str(len(body)))
@@ -53,11 +60,20 @@ def _make_handler(routes: dict[str, str]) -> type[BaseHTTPRequestHandler]:
     return Handler
 
 
-def serve(port: int, routes: dict[str, str]) -> None:
+def _bind_or_die(port: int, routes: dict[str, str]) -> ThreadingHTTPServer:
+    assert BIND_HOST == "127.0.0.1", "lab must stay localhost-only — refuse to bind elsewhere"
     handler = _make_handler(routes)
-    srv = ThreadingHTTPServer(("127.0.0.1", port), handler)
-    print(f"→ mock service listening on http://127.0.0.1:{port}/")
-    srv.serve_forever()
+    try:
+        srv = ThreadingHTTPServer((BIND_HOST, port), handler)
+    except OSError as e:
+        if e.errno == errno.EADDRINUSE:
+            sys.exit(
+                f"✗ port {port} already in use — another mock is running, or a previous one "
+                f"didn't shut down cleanly. Try: lsof -i :{port}  (then kill the pid)."
+            )
+        raise
+    print(f"→ mock service listening on http://{BIND_HOST}:{port}/")
+    return srv
 
 
 def main() -> None:
@@ -72,19 +88,24 @@ def main() -> None:
         "/admin": ADMIN_FLAG,
     }
 
-    threads = [
-        threading.Thread(target=serve, args=(IMDS_PORT, imds_routes), daemon=True),
-        threading.Thread(target=serve, args=(ADMIN_PORT, admin_routes), daemon=True),
+    servers = [
+        _bind_or_die(IMDS_PORT, imds_routes),
+        _bind_or_die(ADMIN_PORT, admin_routes),
     ]
+    threads = [threading.Thread(target=s.serve_forever, daemon=True) for s in servers]
     for t in threads:
         t.start()
 
     print("Both mock services running. Ctrl-C to stop.")
     try:
-        for t in threads:
-            t.join()
+        while True:
+            time.sleep(60)
     except KeyboardInterrupt:
-        print("\nshutting down.")
+        print("\nshutting down...")
+        for s in servers:
+            s.shutdown()
+            s.server_close()
+        print("done.")
 
 
 if __name__ == "__main__":
