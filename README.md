@@ -1,10 +1,17 @@
 # Vulnerable AI Agent Lab
 
+![Python](https://img.shields.io/badge/python-3.12-blue.svg)
+![Ollama](https://img.shields.io/badge/Ollama-llama3.1%20%7C%20qwen2.5-black)
+![OWASP](https://img.shields.io/badge/OWASP-LLM%20Top%2010-red)
+![Status](https://img.shields.io/badge/status-week%202%20complete-brightgreen)
+![Educational](https://img.shields.io/badge/use-educational%20only-orange)
+![License](https://img.shields.io/badge/license-MIT-lightgrey)
+
 Een bewust onveilige LLM-agent voor het oefenen van prompt injection,
 tool abuse, RCE/LFI/SSRF via AI-tooling, en het mappen op OWASP LLM Top 10.
 
 > ⚠️ **EDUCATIONAL USE ONLY.** Draai alleen lokaal (127.0.0.1). Niet exposen
-> aan internet. Niet draaien op een productiemachine.
+> aan internet. Niet draaien op een productiemachine. Zie [SECURITY.md](SECURITY.md).
 
 ## Status
 
