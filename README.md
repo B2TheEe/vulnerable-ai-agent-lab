@@ -3,7 +3,7 @@
 ![Python](https://img.shields.io/badge/python-3.12-blue.svg)
 ![Ollama](https://img.shields.io/badge/Ollama-llama3.1%20%7C%20qwen2.5-black)
 ![OWASP](https://img.shields.io/badge/OWASP-LLM%20Top%2010-red)
-![Status](https://img.shields.io/badge/status-week%202%20complete-brightgreen)
+![Status](https://img.shields.io/badge/status-week%203%20complete-brightgreen)
 ![Educational](https://img.shields.io/badge/use-educational%20only-orange)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
@@ -19,13 +19,15 @@ tool abuse, RCE/LFI/SSRF via AI-tooling, en het mappen op OWASP LLM Top 10.
 |------|------------------------------------|-------------|------------------------|-----------------------------------------|----------------------------------|
 | 1    | RCE via Direct Prompt Injection    | LLM01       | llama3.1:8b, qwen2.5:7b | **−85 %** (2/30 PWNED met regex+judge+allowlist) | [docs/results-week1.md](docs/results-week1.md) |
 | 2    | LFI via File-Read Tool             | LLM06       | llama3.1:8b, qwen2.5:7b | **−100 %** (0/16 PWNED met regex+judge+path_allowlist) | [docs/results-week2.md](docs/results-week2.md) |
-| 3    | SSRF via HTTP-Fetch Tool           | LLM01+LLM02 | code + tests ready      | matrix nog te draaien                  | [docs/week3-design.md](docs/week3-design.md) |
+| 3    | SSRF via HTTP-Fetch Tool           | LLM01+LLM02 | llama3.1:8b, qwen2.5:7b | **−100 %** (0/16 PWNED met regex+judge+url_allowlist) | [docs/results-week3.md](docs/results-week3.md) |
 | 4    | Indirect Injection via Web Browse  | LLM01       | —                       | —                                       | —                                |
 
-**Hoofdinsight week 1→2:** dezelfde `allowlist`-defense gaat van −50 %
-reductie (week 1, shell-tool) naar **0 % reductie** (week 2, file-read tool)
-puur door wisseling van tool-context. Defenses moeten **per-tool** ontworpen
-worden, niet per-app. Zie [docs/results-week2.md §3](docs/results-week2.md).
+**Hoofdinsight week 1→2→3:** dezelfde `allowlist`-defense gaat van −50 %
+reductie (week 1, shell-tool) naar **0 % reductie** (week 2 file_read, week 3 http_fetch)
+puur door wisseling van tool-context. Drie keer cijfermatig bevestigd:
+defenses moeten **per-tool** ontworpen worden, niet per-app. Bonus week 3:
+**tool-confusion** — een tool-passende defense zonder dekking op de andere
+tools duwt het model gewoon naar een onverdedigde tool ([docs/results-week3.md §2](docs/results-week3.md)).
 
 ## Quick start
 
@@ -57,7 +59,7 @@ python -m tests.summarize_results results-week2-*.txt
 |---|------|-----------|------------|--------|
 | 01 | RCE via Direct Prompt Injection | LLM01 | ⭐ | ✅ klaar |
 | 02 | LFI via File-Read Tool | LLM06 | ⭐⭐ | ✅ klaar |
-| 03 | SSRF via HTTP-Fetch Tool | LLM01+LLM02 | ⭐⭐ | 🔧 code+tests ready, matrix te draaien |
+| 03 | SSRF via HTTP-Fetch Tool | LLM01+LLM02 | ⭐⭐ | ✅ klaar |
 | 04 | Indirect Injection via Web Browse *(week 4)* | LLM01 | ⭐⭐⭐ | ⏳ gepland |
 | 05 | Data Exfil via Markdown Rendering *(week 4)* | LLM02 | ⭐⭐ | ⏳ gepland |
 

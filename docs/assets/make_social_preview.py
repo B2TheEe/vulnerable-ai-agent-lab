@@ -65,7 +65,7 @@ def main() -> None:
     )
     d.text(
         (60, 240),
-        "Prompt injection · RCE · LFI · layered defenses, measured.",
+        "Prompt injection · RCE · LFI · SSRF · layered defenses, measured.",
         font=font(26),
         fill=DIM,
     )
@@ -82,26 +82,33 @@ def main() -> None:
     # Card header
     d.text(
         (card_x + 28, card_y + 22),
-        "Stack defense — PWNED / total  (lower = better)",
+        "Stack defense — PWNED / total  (3 challenges, lower = better)",
         font=font(22, bold=True),
         fill=DIM,
     )
 
-    # Two-column results
+    # Three-column results
     col1_x = card_x + 28
-    col2_x = card_x + 580
+    col2_x = card_x + 410
+    col3_x = card_x + 800
 
     # Week 1
-    d.text((col1_x, card_y + 70), "Week 1  RCE via shell", font=font(26, bold=True), fill=INK)
-    d.text((col1_x, card_y + 108), "llama3.1:8b   qwen2.5:7b", font=font(20), fill=DIM)
-    d.text((col1_x, card_y + 140), "  2/15           2/15", font=font(28, bold=True), fill=ACCENT_RED)
-    d.text((col1_x, card_y + 180), "-85% vs baseline", font=font(20), fill=ACCENT_GREEN)
+    d.text((col1_x, card_y + 70), "Wk 1  RCE shell", font=font(24, bold=True), fill=INK)
+    d.text((col1_x, card_y + 105), "llama   qwen", font=font(18), fill=DIM)
+    d.text((col1_x, card_y + 135), " 2/15    2/15", font=font(26, bold=True), fill=ACCENT_RED)
+    d.text((col1_x, card_y + 178), "-85% vs baseline", font=font(18), fill=ACCENT_GREEN)
 
     # Week 2
-    d.text((col2_x, card_y + 70), "Week 2  LFI via file_read", font=font(26, bold=True), fill=INK)
-    d.text((col2_x, card_y + 108), "llama3.1:8b   qwen2.5:7b", font=font(20), fill=DIM)
-    d.text((col2_x, card_y + 140), "  0/8            0/8", font=font(28, bold=True), fill=ACCENT_GREEN)
-    d.text((col2_x, card_y + 180), "-100% with path_allowlist", font=font(20), fill=ACCENT_GREEN)
+    d.text((col2_x, card_y + 70), "Wk 2  LFI file_read", font=font(24, bold=True), fill=INK)
+    d.text((col2_x, card_y + 105), "llama   qwen", font=font(18), fill=DIM)
+    d.text((col2_x, card_y + 135), " 0/8     0/8", font=font(26, bold=True), fill=ACCENT_GREEN)
+    d.text((col2_x, card_y + 178), "-100% path_allowlist", font=font(18), fill=ACCENT_GREEN)
+
+    # Week 3
+    d.text((col3_x, card_y + 70), "Wk 3  SSRF http_fetch", font=font(24, bold=True), fill=INK)
+    d.text((col3_x, card_y + 105), "llama   qwen", font=font(18), fill=DIM)
+    d.text((col3_x, card_y + 135), " 0/8     0/8", font=font(26, bold=True), fill=ACCENT_GREEN)
+    d.text((col3_x, card_y + 178), "-100% url_allowlist", font=font(18), fill=ACCENT_GREEN)
 
     # Footer
     d.text(
