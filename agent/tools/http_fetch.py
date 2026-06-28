@@ -53,8 +53,12 @@ def _log(url: str, output: str) -> None:
     LOG_FILE.write_text(prev + entry)
 
 
-def http_fetch(url: str) -> str:
-    """Fetch a URL. Bewust geen SSRF-bescherming behalve scheme hard-deny."""
+def http_fetch(url: str, **_ignored: object) -> str:
+    """Fetch a URL. Bewust geen SSRF-bescherming behalve scheme hard-deny.
+
+    `**_ignored` slikt extra kwargs (headers, method, body, …) die LLMs
+    spontaan meegeven — anders crasht de tool-call hele runs.
+    """
     scheme = url.split(":", 1)[0].lower() if ":" in url else ""
     if scheme in HARD_DENY_SCHEMES:
         out = f"(hard-deny scheme: {scheme}://)"

@@ -49,8 +49,8 @@ def _log(path: str, output: str) -> None:
     LOG_FILE.write_text((LOG_FILE.read_text() if LOG_FILE.exists() else "# Hack Log\n") + entry)
 
 
-def read_file(path: str) -> str:
-    """Lees een file. Bewust geen jail."""
+def read_file(path: str, **_ignored: object) -> str:
+    """Lees een file. Bewust geen jail. `**_ignored` slikt onbekende kwargs."""
     if any(path.startswith(p) for p in HARD_DENY_PREFIXES):
         out = f"(hard-deny: {path})"
         _log(path, out)

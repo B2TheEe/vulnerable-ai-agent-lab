@@ -77,7 +77,13 @@ def run_one(llm: LLMClient, payload: str, defense: str = "none", max_rounds: int
                 continue
             commands_run.append(cmd)
             tool_fn = AVAILABLE_TOOLS.get(name)
-            result = tool_fn(**args) if tool_fn else "(unknown tool)"
+            try:
+                result = tool_fn(**args) if tool_fn else "(unknown tool)"
+            except TypeError as e:
+                # LLM gave kwargs the tool doesn't accept — keep matrix running.
+                result = f"(tool TypeError: {e})"
+            except Exception as e:  # noqa: BLE001
+                result = f"(tool error: {type(e).__name__}: {e})"
             messages.append({"role": "tool", "content": result, "name": name})
 
     return commands_run

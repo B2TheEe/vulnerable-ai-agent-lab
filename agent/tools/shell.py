@@ -45,8 +45,8 @@ def _log(command: str, output: str) -> None:
     LOG_FILE.write_text(prev + entry)
 
 
-def execute_shell(command: str) -> str:
-    """Voert command uit via /bin/sh. Bewust geen sanitization."""
+def execute_shell(command: str, **_ignored: object) -> str:
+    """Voert command uit via /bin/sh. Bewust geen sanitization. `**_ignored` slikt onbekende kwargs."""
     try:
         result = subprocess.run(
             command,
