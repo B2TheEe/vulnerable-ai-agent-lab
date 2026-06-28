@@ -13,6 +13,10 @@ tool abuse, RCE/LFI/SSRF via AI-tooling, en het mappen op OWASP LLM Top 10.
 > ⚠️ **EDUCATIONAL USE ONLY.** Draai alleen lokaal (127.0.0.1). Niet exposen
 > aan internet. Niet draaien op een productiemachine. Zie [SECURITY.md](SECURITY.md).
 
+> 🔗 **Sister lab:** [rag-poisoning-lab](https://github.com/B2TheEe/rag-poisoning-lab)
+> covers the *indirect* variant (prompt injection via poisoned documents in a
+> RAG vectorstore). This repo covers the *direct* variant.
+
 ## Status
 
 | Week | Challenge                          | OWASP LLM   | Modellen testen        | Stack-blockrate (beste defense)        | Writeup                          |
