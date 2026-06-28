@@ -114,7 +114,7 @@ ALLOWED_PATH_PREFIXES = (
     str(_PROJECT_ROOT / "docs"),
     str(_PROJECT_ROOT / "agent"),
     "/etc/hostname",
-    "/etc/os-release",
+    "/etc/os-release",   # NB: symlink on Ubuntu → /usr/lib/os-release → blocked after resolve()
     "/proc/cpuinfo",
     "/proc/meminfo",
 )
