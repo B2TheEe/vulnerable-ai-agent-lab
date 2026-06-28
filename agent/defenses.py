@@ -147,6 +147,63 @@ def path_allowlist(path: str) -> tuple[bool, str]:
 
 
 # ─────────────────────────────────────────────────────────────
+# Layer 5 — URL allowlist (http_fetch tool, week 3)
+# ─────────────────────────────────────────────────────────────
+
+import socket
+from urllib.parse import urlparse
+
+# Minimal seed — twee publieke hosts zodat de defense iets doorlaat.
+# Alles anders wordt geblokt (deny-by-default).
+ALLOWED_HOSTS = {"api.github.com", "docs.python.org"}
+
+# RFC-1918 + loopback + link-local. Match op IPv4 string-prefix (cheap & expliciet).
+BLOCKED_IP_PREFIXES = (
+    "127.",       # loopback
+    "10.",        # private
+    "192.168.",   # private
+    "169.254.",   # link-local incl. AWS IMDS 169.254.169.254
+    "172.16.", "172.17.", "172.18.", "172.19.",
+    "172.20.", "172.21.", "172.22.", "172.23.",
+    "172.24.", "172.25.", "172.26.", "172.27.",
+    "172.28.", "172.29.", "172.30.", "172.31.",
+    "0.",         # 0.0.0.0/8
+)
+BLOCKED_IPV6 = {"::1", "::"}
+ALLOWED_SCHEMES = {"http", "https"}
+
+
+def url_allowlist(url: str) -> tuple[bool, str]:
+    """
+    Parse URL → resolve hostname → deny private/loopback/link-local IPs →
+    require host in ALLOWED_HOSTS.
+
+    Bewust niet gefixt (gap voor writeup):
+      - TOCTOU: tussen gethostbyname() en de echte HTTP-call kan DNS van
+        antwoord wisselen (DNS-rebinding). Week-4 verdiepingsexperiment.
+      - IPv6 string-match is incomplete (alleen ::1 / ::). In productie:
+        ipaddress.ip_address().is_private check.
+    """
+    if not url:
+        return False, "empty url"
+    p = urlparse(url)
+    if p.scheme.lower() not in ALLOWED_SCHEMES:
+        return False, f"scheme '{p.scheme}' denied"
+    host = (p.hostname or "").lower()  # urlparse strips userinfo automatisch
+    if not host:
+        return False, "no hostname"
+    try:
+        ip = socket.gethostbyname(host)
+    except socket.gaierror:
+        return False, f"unresolvable host: {host}"
+    if ip in BLOCKED_IPV6 or any(ip.startswith(pfx) for pfx in BLOCKED_IP_PREFIXES):
+        return False, f"private/loopback/link-local IP {ip} (host={host})"
+    if host not in ALLOWED_HOSTS:
+        return False, f"host '{host}' not in allowlist"
+    return True, ""
+
+
+# ─────────────────────────────────────────────────────────────
 # Dispatcher
 # ─────────────────────────────────────────────────────────────
 
@@ -169,10 +226,15 @@ def check_tool(defense: str, command: str, tool_name: str = "execute_shell") -> 
 
     Voor execute_shell → binary allowlist + metachar deny.
     Voor read_file     → path allowlist.
+    Voor http_fetch    → url allowlist (scheme + IP + host).
     """
     if tool_name == "read_file":
         if defense in ("path_allowlist", "stack"):
             return path_allowlist(command)
+        return True, ""
+    if tool_name == "http_fetch":
+        if defense in ("url_allowlist", "stack"):
+            return url_allowlist(command)
         return True, ""
     # execute_shell pad
     if defense in ("allowlist", "stack"):

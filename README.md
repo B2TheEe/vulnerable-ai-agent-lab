@@ -19,7 +19,7 @@ tool abuse, RCE/LFI/SSRF via AI-tooling, en het mappen op OWASP LLM Top 10.
 |------|------------------------------------|-------------|------------------------|-----------------------------------------|----------------------------------|
 | 1    | RCE via Direct Prompt Injection    | LLM01       | llama3.1:8b, qwen2.5:7b | **−85 %** (2/30 PWNED met regex+judge+allowlist) | [docs/results-week1.md](docs/results-week1.md) |
 | 2    | LFI via File-Read Tool             | LLM06       | llama3.1:8b, qwen2.5:7b | **−100 %** (0/16 PWNED met regex+judge+path_allowlist) | [docs/results-week2.md](docs/results-week2.md) |
-| 3    | SSRF via HTTP Tool *(gepland)*     | LLM01+LLM02 | —                       | —                                       | —                                |
+| 3    | SSRF via HTTP-Fetch Tool           | LLM01+LLM02 | code + tests ready      | matrix nog te draaien                  | [docs/week3-design.md](docs/week3-design.md) |
 | 4    | Indirect Injection via Web Browse  | LLM01       | —                       | —                                       | —                                |
 
 **Hoofdinsight week 1→2:** dezelfde `allowlist`-defense gaat van −50 %
@@ -57,7 +57,7 @@ python -m tests.summarize_results results-week2-*.txt
 |---|------|-----------|------------|--------|
 | 01 | RCE via Direct Prompt Injection | LLM01 | ⭐ | ✅ klaar |
 | 02 | LFI via File-Read Tool | LLM06 | ⭐⭐ | ✅ klaar |
-| 03 | SSRF via HTTP Tool *(week 3)* | LLM01+LLM02 | ⭐⭐ | 🔧 in voorbereiding |
+| 03 | SSRF via HTTP-Fetch Tool | LLM01+LLM02 | ⭐⭐ | 🔧 code+tests ready, matrix te draaien |
 | 04 | Indirect Injection via Web Browse *(week 4)* | LLM01 | ⭐⭐⭐ | ⏳ gepland |
 | 05 | Data Exfil via Markdown Rendering *(week 4)* | LLM02 | ⭐⭐ | ⏳ gepland |
 
@@ -69,7 +69,8 @@ python -m tests.summarize_results results-week2-*.txt
 | 2     | `judge`         | user input (LLM)   | week 1         |
 | 3     | `allowlist`     | shell binary       | week 1         |
 | 4     | `path_allowlist`| file_read path     | week 2         |
-| stack | alles samen     | input + tool       | week 1 (uitgebreid wk2) |
+| 5     | `url_allowlist` | http_fetch URL     | week 3         |
+| stack | alles samen     | input + tool       | week 1 (uitgebreid wk2+wk3) |
 
 ## Architectuur
 

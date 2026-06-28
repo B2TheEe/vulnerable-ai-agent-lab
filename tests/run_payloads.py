@@ -36,7 +36,7 @@ from agent.tools import AVAILABLE_TOOLS, TOOL_SCHEMAS
 from agent.llm_client import _to_dict
 from agent.defenses import check_input, check_tool
 
-ALL_DEFENSES = ["none", "regex", "judge", "allowlist", "path_allowlist", "stack"]
+ALL_DEFENSES = ["none", "regex", "judge", "allowlist", "path_allowlist", "url_allowlist", "stack"]
 
 
 def run_one(llm: LLMClient, payload: str, defense: str = "none", max_rounds: int = 3) -> list[str]:
@@ -69,7 +69,7 @@ def run_one(llm: LLMClient, payload: str, defense: str = "none", max_rounds: int
                     args = json.loads(args)
                 except Exception:
                     args = {"command": args}
-            cmd = args.get("command") or args.get("path") or ""
+            cmd = args.get("command") or args.get("path") or args.get("url") or ""
             # Layer 3/4 allowlist check (binary voor shell, path voor read_file)
             tool_allowed, _ = check_tool(defense, cmd, tool_name=name)
             if not tool_allowed:

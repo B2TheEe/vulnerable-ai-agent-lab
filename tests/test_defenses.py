@@ -17,6 +17,7 @@ import pytest
 
 from agent.defenses import (
     ALLOWED_BINARIES,
+    ALLOWED_HOSTS,
     ALLOWED_PATH_PREFIXES,
     BLOCKED_KEYWORDS,
     DENY_BASENAMES,
@@ -25,6 +26,7 @@ from agent.defenses import (
     path_allowlist,
     regex_filter,
     tool_allowlist,
+    url_allowlist,
 )
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -260,3 +262,94 @@ class TestDispatcher:
     def test_check_tool_stack_blocks_both_tools(self) -> None:
         assert check_tool("stack", "rm -rf /", tool_name="execute_shell")[0] is False
         assert check_tool("stack", "/etc/passwd", tool_name="read_file")[0] is False
+
+
+# ─────────────────────────────────────────────────────────────
+# Layer 5 — url_allowlist (http_fetch, week 3)
+# ─────────────────────────────────────────────────────────────
+
+
+class TestUrlAllowlist:
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://127.0.0.1:9998/latest/meta-data/iam/",
+            "http://127.0.0.1:9999/admin/users",
+            "http://127.0.0.1:11434/api/tags",
+            "http://10.0.0.1/",
+            "http://192.168.1.1/router",
+            "http://169.254.169.254/latest/meta-data/",  # real AWS IMDS
+            "http://172.16.0.1/internal",
+            "http://0.0.0.0/",
+        ],
+    )
+    def test_blocks_private_loopback_linklocal(self, url: str) -> None:
+        allowed, reason = url_allowlist(url)
+        assert allowed is False, f"expected block, got allow for {url}"
+        assert "private/loopback/link-local" in reason or "unresolvable" in reason
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "file:///etc/passwd",
+            "gopher://127.0.0.1/_test",
+            "dict://127.0.0.1:11211/stats",
+            "ftp://example.com/",
+            "ldap://example.com/",
+        ],
+    )
+    def test_blocks_dangerous_schemes(self, url: str) -> None:
+        allowed, reason = url_allowlist(url)
+        assert allowed is False
+        assert "scheme" in reason and "denied" in reason
+
+    def test_url_userinfo_trick_does_not_bypass(self) -> None:
+        """
+        Documented bypass attempt: http://example.com@127.0.0.1/admin
+        urlparse().hostname returns '127.0.0.1', not 'example.com'.
+        Pins that we use .hostname, not .netloc parsing.
+        """
+        allowed, reason = url_allowlist("http://example.com@127.0.0.1/admin")
+        assert allowed is False
+        assert "127.0.0.1" in reason
+
+    def test_decimal_ip_is_resolved(self) -> None:
+        """
+        2130706433 == 127.0.0.1 (decimal IP form).
+        gethostbyname resolves this to 127.0.0.1 → must be blocked.
+        """
+        allowed, reason = url_allowlist("http://2130706433/admin")
+        assert allowed is False
+        assert "127." in reason or "unresolvable" in reason
+
+    def test_unlisted_public_host_is_blocked(self) -> None:
+        allowed, reason = url_allowlist("https://example.com/")
+        assert allowed is False
+        assert "not in allowlist" in reason
+
+    def test_allowed_hosts_default_seed(self) -> None:
+        """Seed should be small and only contain documentation hosts."""
+        assert ALLOWED_HOSTS == {"api.github.com", "docs.python.org"}
+
+    def test_empty_url_blocked(self) -> None:
+        allowed, reason = url_allowlist("")
+        assert allowed is False
+        assert reason == "empty url"
+
+    def test_dispatcher_url_allowlist_is_noop_for_other_tools(self) -> None:
+        """Cross-tool symmetry: url_allowlist alone must not affect shell/file_read."""
+        assert check_tool("url_allowlist", "rm -rf /", tool_name="execute_shell")[0] is True
+        assert check_tool("url_allowlist", "/etc/passwd", tool_name="read_file")[0] is True
+
+    def test_dispatcher_other_tool_defenses_are_noop_for_http_fetch(self) -> None:
+        """
+        Hoofdthese cross-challenge: shell-allowlist en path_allowlist mogen
+        http_fetch NIET aanraken. Anders krijg je per ongeluk reductie en
+        leid je verkeerde conclusies af.
+        """
+        assert check_tool("allowlist", "http://127.0.0.1/admin", tool_name="http_fetch")[0] is True
+        assert check_tool("path_allowlist", "http://127.0.0.1/admin", tool_name="http_fetch")[0] is True
+
+    def test_dispatcher_stack_blocks_http_fetch_to_loopback(self) -> None:
+        allowed, _ = check_tool("stack", "http://127.0.0.1:9999/admin", tool_name="http_fetch")
+        assert allowed is False
