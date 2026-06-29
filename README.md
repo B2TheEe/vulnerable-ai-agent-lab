@@ -111,6 +111,8 @@ docs/                   # weekly writeups + cross-challenge analyse
 
 ## Writeups
 
+- [`docs/owasp-coverage.md`](docs/owasp-coverage.md) — OWASP LLM Top 10 (v2025)
+  coverage-tabel per challenge, met cross-lab kompas naar zuster-repo.
 - [`docs/blog-post-week3-tool-confusion.md`](docs/blog-post-week3-tool-confusion.md) —
   the week-3 tool-confusion finding (`url_allowlist` did not bypass; the model
   pivoted to `execute_shell`). English, ~450 words.

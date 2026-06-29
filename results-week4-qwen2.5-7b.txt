@@ -1,0 +1,3 @@
+═══ DEFENSE: none ═══
+Running 8 payload(s) against qwen2.5:7b with defense=none pwn-criterion=shell_or_file_only
+
