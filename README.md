@@ -109,6 +109,14 @@ tests/
 docs/                   # weekly writeups + cross-challenge analyse
 ```
 
+## Writeups
+
+- [`docs/blog-post-week3-tool-confusion.md`](docs/blog-post-week3-tool-confusion.md) —
+  the week-3 tool-confusion finding (`url_allowlist` did not bypass; the model
+  pivoted to `execute_shell`). English, ~450 words.
+- [`docs/blog-post-week3-tool-confusion-nl.md`](docs/blog-post-week3-tool-confusion-nl.md) —
+  Nederlandse versie van bovenstaand.
+
 ## Disclaimer
 
 Dit project bestaat om defenders en pentesters te leren hoe agentische LLM-systemen
