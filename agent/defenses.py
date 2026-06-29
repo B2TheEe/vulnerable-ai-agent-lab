@@ -339,3 +339,41 @@ def check_tool(defense: str, command: str, tool_name: str = "execute_shell") -> 
     if defense in ("allowlist", "stack"):
         return tool_allowlist(command)
     return True, ""
+
+
+def filter_tool_output(
+    defense: str,
+    tool_name: str,
+    output: str,
+    llm: LLMClient | None = None,
+) -> tuple[str, str | None]:
+    """Post-execution filter op tool-output (week 4: indirect-injection layer).
+
+    Returns (filtered_output, block_reason).
+    - block_reason is None → output mag terug naar de LLM.
+    - block_reason is str  → output_judge heeft het geblokkeerd; caller vervangt
+      de tool-result met een marker zodat het model snapt dat er niets is om
+      te summarizen.
+
+    Active defenses voor deze laag:
+      - "output_sanitizer": alleen sanitizer (strip + marker-wrap + cap).
+      - "output_judge":     alleen judge (LLM-classifier).
+      - "stack":            sanitizer + judge gecombineerd.
+      - alle andere defenses zijn no-op op deze laag.
+    """
+    if tool_name != "http_fetch":
+        return output, None
+
+    san_active = defense in ("output_sanitizer", "stack")
+    judge_active = defense in ("output_judge", "stack")
+
+    filtered = sanitize_tool_output(tool_name, output) if san_active else output
+
+    if judge_active:
+        # judge classificeert op de (al-gesanitizede) content — sanitizer-wrap
+        # met UNTRUSTED-marker is bewust óók zichtbaar voor judge; helpt 'm.
+        ok, reason = output_judge(tool_name, filtered, llm=llm)
+        if not ok:
+            return filtered, reason
+
+    return filtered, None
